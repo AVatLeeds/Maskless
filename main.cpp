@@ -7,8 +7,6 @@
 #include <readline/readline.h>
 #include <readline/history.h>
 #include <pthread.h>
-#include <xcb/xcb_icccm.h>
-#include <xcb/xproto.h>
 
 #include "XCB_framebuffer_window.h"
 
