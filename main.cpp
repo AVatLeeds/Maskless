@@ -126,7 +126,8 @@ enum arg_types {PATH, TEXT_BOOL, UINT, INT, CSV_UINT_LIST, CSV_INT_LIST, ENUM};
 
 struct generic_args
 {
-    struct window_data * window_data;
+    class Framebuffer_window * preview_window;
+    class Framebuffer_window * display_window;
     class PNG * image;
 };
 
@@ -162,6 +163,26 @@ int quit_func(struct generic_args * generic_args_ptr, void * args_list[])
 {
     global_flags.close = true;
     return 0;
+}
+
+int png_preview(struct generic_args * generic_args_ptr, void * args_list[])
+{
+
+}
+
+int align(struct generic_args * generic_args_ptr, void * args_list[])
+{
+    
+}
+
+int expose(struct generic_args * generic_args_ptr, void * args_list[])
+{
+    
+}
+
+int clear(struct generic_args * generic_args_ptr, void * args_list[])
+{
+    
 }
 
 /*int preview_func(struct generic_args * generic_args_ptr, void * args_list[])
@@ -287,7 +308,7 @@ int main(int argc, char * argv[])
     //};
     struct exposed_func commands_array[num_commands] = 
     {
-        {"quit", 4, 0, {&window_data, NULL}, {}, quit_func},
+        {"quit", 4, 0, {&preview_window, &display_window, NULL}, {}, quit_func},
         //{"preview", 7, 1, {&window_data, &png_image}, {{.arg_type = TEXT_BOOL, .text_bool = {"show", "hide"}}}, preview_func},
         //{"fill", 4, 2, {&preview_window}, {{.arg_type = CSV_UINT_LIST, .list_length = 3}, {.arg_type = ENUM, .enumeration_strings = blend_mode_strings}}, fill_func}
     };
