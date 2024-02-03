@@ -20,6 +20,7 @@ class Framebuffer_window
     void show();
 
     int error_status;
+    unsigned int width, height;
     unsigned int bit_depth;
     unsigned int bits_per_pixel;
     unsigned int stride;
