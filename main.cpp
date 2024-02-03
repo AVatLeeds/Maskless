@@ -3,7 +3,6 @@
 #include <cstdlib>
 #include <cstring>
 #include <iostream>
-#include <ostream>
 #include <readline/readline.h>
 #include <readline/history.h>
 #include <pthread.h>
@@ -165,25 +164,67 @@ int quit_func(struct generic_args * generic_args_ptr, void * args_list[])
     return 0;
 }
 
-int png_preview(struct generic_args * generic_args_ptr, void * args_list[])
+int png_load_func(struct generic_args * generic_args_ptr, void * args_list[])
+{
+    uint8_t * temp_ptr;
+    if (generic_args_ptr->image->open((char *)args_list[0]) < 0) return -1;
+    for (int j = 0; j < generic_args_ptr->image->height(); j ++)
+    {
+        temp_ptr = generic_args_ptr->preview_window->framebuffer_ptr + (j * generic_args_ptr->preview_window->stride);
+        // TODO get rid of magic number 3!
+        for (int i = 0; i < generic_args_ptr->image->row_bytes(); i += 3)
+        {
+            *(temp_ptr ++) = generic_args_ptr->image->data_ptr[j][i + 0];
+            *(temp_ptr ++) = generic_args_ptr->image->data_ptr[j][i + 1];
+            *(temp_ptr ++) = generic_args_ptr->image->data_ptr[j][i + 2];
+            *(temp_ptr ++) = 0;
+        }
+    }
+}
+
+int png_preview_func(struct generic_args * generic_args_ptr, void * args_list[])
 {
 
 }
 
-int align(struct generic_args * generic_args_ptr, void * args_list[])
+int clear_func(struct generic_args * generic_args_ptr, void * args_list[])
 {
-    
+    for (int i = 0; i < (generic_args_ptr->display_window->stride * generic_args_ptr->display_window->height); i ++)
+    {
+        generic_args_ptr->display_window->framebuffer_ptr[i] = 0;
+    }
 }
 
-int expose(struct generic_args * generic_args_ptr, void * args_list[])
+int align_func(struct generic_args * generic_args_ptr, void * args_list[])
 {
-    
+    clear_func(NULL, NULL);
+    uint8_t max_brightness = 128;
+    unsigned int temp_for_scaling = 0;
+    for (int i = 3; i < (generic_args_ptr->preview_window->stride * generic_args_ptr->preview_window->height); i += 4)
+    {
+        temp_for_scaling = generic_args_ptr->preview_window->framebuffer_ptr[i] * max_brightness;
+        generic_args_ptr->display_window->framebuffer_ptr[i] = temp_for_scaling / 255;
+    }
+    generic_args_ptr->display_window->re_draw();
 }
 
-int clear(struct generic_args * generic_args_ptr, void * args_list[])
+int expose_func(struct generic_args * generic_args_ptr, void * args_list[])
 {
-    
+    clear_func(NULL, NULL);
+    uint8_t max_brightness = 128;
+    unsigned int temp_for_scaling = 0;
+    for (int i = 0; i < (generic_args_ptr->preview_window->stride * generic_args_ptr->preview_window->height); i ++)
+    {
+        if ((i % 4))
+        {
+            temp_for_scaling = generic_args_ptr->preview_window->framebuffer_ptr[i] * max_brightness;
+            generic_args_ptr->display_window->framebuffer_ptr[i] = temp_for_scaling / 255;
+        }
+    }
+    generic_args_ptr->display_window->re_draw();
 }
+
+
 
 /*int preview_func(struct generic_args * generic_args_ptr, void * args_list[])
 {
@@ -197,11 +238,6 @@ int clear(struct generic_args * generic_args_ptr, void * args_list[])
     }
     return 0;
 }*/
-
-int png_load_func(struct generic_args * generic_args_ptr, void * args_list[])
-{
-    return (generic_args_ptr->image->open((char *)args_list[0]));
-}
 
 /*int handle_args(char * command_buffer, struct exposed_func * func)
 {
