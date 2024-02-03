@@ -11,6 +11,7 @@
 #include <xcb/xproto.h>
 
 #include "XCB_framebuffer_window.h"
+#include "PNG_reader.h"
 
 #define PROJECTOR_WIDTH     1024
 #define PROJECTOR_HEIGHT    768
@@ -74,18 +75,12 @@ void * window_thread(void * args)
 struct window_drawing
 {
     class Framebuffer_window window;
-    struct window_props window_props;
     void clear_window_framebuffer();
     void fill_window_framebuffer(uint8_t (&channels)[3], enum blending_modes blend_mode);
     void put_pixel(struct coordinate position, uint8_t (&channels)[3], enum blending_modes blend_mode);
     void line_horiz(struct coordinate start_position, int length, unsigned int line_width_px, uint8_t (&channels)[3], enum blending_modes blend_mode);
     void line_vert(struct coordinate start_position, int length, unsigned int line_width_px, uint8_t (&channels)[3], enum blending_modes blend_mode);
 };
-
-void clear_window_framebuffer(struct window_props window_props, uint8_t * framebuffer_ptr)
-{
-
-}
 
 /*enum commands {QUIT, PREVIEW, CLEAR, FILL, PUT_PIXEL, LINE_HORIZ, LINE_VERT};
 
@@ -127,12 +122,12 @@ void preview_command(struct generic_args * args)
     }
 }*/
 
-enum arg_types {TEXT_BOOL, UINT, INT, CSV_UINT_LIST, CSV_INT_LIST, ENUM};
+enum arg_types {PATH, TEXT_BOOL, UINT, INT, CSV_UINT_LIST, CSV_INT_LIST, ENUM};
 
 struct generic_args
 {
-    class Framebuffer_window * window_ptr;
-    struct window_props * window_properties;
+    struct window_data * window_data;
+    class PNG * image;
 };
 
 struct text_bool
@@ -146,6 +141,7 @@ struct arg
     enum arg_types arg_type;
     union
     {
+        char * path;
         struct text_bool text_bool;
         unsigned int list_length;
         char ** enumeration_strings;
@@ -159,15 +155,16 @@ struct exposed_func
     unsigned int num_args;
     struct generic_args generic_args;
     const struct arg (&args_list)[];
-    void (* func)(struct generic_args * generic_args_ptr, void * args_list[]);
+    int (* func)(struct generic_args * generic_args_ptr, void * args_list[]);
 };
 
-void quit_func(struct generic_args * generic_args_ptr, void * args_list[])
+int quit_func(struct generic_args * generic_args_ptr, void * args_list[])
 {
     global_flags.close = true;
+    return 0;
 }
 
-void preview_func(struct generic_args * generic_args_ptr, void * args_list[])
+/*int preview_func(struct generic_args * generic_args_ptr, void * args_list[])
 {
     if ((bool *)args_list[0])
     {
@@ -177,11 +174,12 @@ void preview_func(struct generic_args * generic_args_ptr, void * args_list[])
     {
         generic_args_ptr->window_ptr->hide();
     }
-}
+    return 0;
+}*/
 
-void fill_func(struct generic_args * generic_args_ptr, void * args_list[])
+int png_load_func(struct generic_args * generic_args_ptr, void * args_list[])
 {
-
+    return (generic_args_ptr->image->open((char *)args_list[0]));
 }
 
 /*int handle_args(char * command_buffer, struct exposed_func * func)
@@ -255,17 +253,15 @@ int main(int argc, char * argv[])
 {
     // TODO - read projector resolution from config file
 
-    struct window_props display_window_props;
-    class Framebuffer_window display_window(PROJECTOR_WIDTH, PROJECTOR_HEIGHT, "Projector display.", 18, &display_window_props);
-    if (display_window_props.error_status < 0)
+    class Framebuffer_window display_window(PROJECTOR_WIDTH, PROJECTOR_HEIGHT, "Projector display.", 18);
+    if (display_window.error_status < 0)
     {
         std::cerr << "Failed to create projector display window.\n";
         return -1;
     }
 
-    struct window_props preview_window_props;
-    class Framebuffer_window preview_window(PROJECTOR_WIDTH, PROJECTOR_HEIGHT, "Preview.", 8, &preview_window_props);
-    if (preview_window_props.error_status < 0)
+    class Framebuffer_window preview_window(PROJECTOR_WIDTH, PROJECTOR_HEIGHT, "Preview.", 8);
+    if (preview_window.error_status < 0)
     {
         std::cerr << "Failed to create preview window.\n";
         return -1;
@@ -282,16 +278,18 @@ int main(int argc, char * argv[])
         return -1;
     }
 
-    const unsigned int num_commands = 3;
+    PNG png_image;
+
+    const unsigned int num_commands = 1;
     //const struct command commands_array[num_commands] = {
     //    {QUIT, 4, "quit", 0, quit_command},
     //    {PREVIEW, 7, "preview", 1, preview_command}
     //};
     struct exposed_func commands_array[num_commands] = 
     {
-        {"quit", 4, 0, {NULL, NULL}, {}, quit_func},
-        {"preview", 7, 1, {&preview_window, &preview_window_props}, {{TEXT_BOOL, {"show", "hide"}}}, preview_func},
-        {"fill", 4, 2, {&preview_window, &preview_window_props}, {{.arg_type = CSV_UINT_LIST, .list_length = 3}, {.arg_type = ENUM, .enumeration_strings = blend_mode_strings}}, fill_func}
+        {"quit", 4, 0, {&window_data, NULL}, {}, quit_func},
+        //{"preview", 7, 1, {&window_data, &png_image}, {{.arg_type = TEXT_BOOL, .text_bool = {"show", "hide"}}}, preview_func},
+        //{"fill", 4, 2, {&preview_window}, {{.arg_type = CSV_UINT_LIST, .list_length = 3}, {.arg_type = ENUM, .enumeration_strings = blend_mode_strings}}, fill_func}
     };
 
     unsigned int command_idx, buffer_idx, length;
