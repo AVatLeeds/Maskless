@@ -199,13 +199,13 @@ int clear_func(struct generic_args * generic_args_ptr, void * args_list[])
 
 int align_func(struct generic_args * generic_args_ptr, void * args_list[])
 {
-    clear_func(NULL, NULL);
+    clear_func(generic_args_ptr, NULL);
     uint8_t max_brightness = 128;
     unsigned int temp_for_scaling = 0;
     for (unsigned int i = 3; i < (generic_args_ptr->preview_window->stride * generic_args_ptr->preview_window->height); i += 4)
     {
         temp_for_scaling = generic_args_ptr->preview_window->framebuffer_ptr[i] * max_brightness;
-        generic_args_ptr->display_window->framebuffer_ptr[i] = temp_for_scaling / 255;
+        generic_args_ptr->display_window->framebuffer_ptr[i] = 128;//temp_for_scaling / 255;
     }
     generic_args_ptr->display_window->re_draw();
     return 0;
@@ -213,7 +213,7 @@ int align_func(struct generic_args * generic_args_ptr, void * args_list[])
 
 int expose_func(struct generic_args * generic_args_ptr, void * args_list[])
 {
-    clear_func(NULL, NULL);
+    clear_func(generic_args_ptr, NULL);
     uint8_t max_brightness = 128;
     unsigned int temp_for_scaling = 0;
     for (unsigned int i = 0; i < (generic_args_ptr->preview_window->stride * generic_args_ptr->preview_window->height); i ++)
@@ -221,7 +221,7 @@ int expose_func(struct generic_args * generic_args_ptr, void * args_list[])
         if ((i % 4))
         {
             temp_for_scaling = generic_args_ptr->preview_window->framebuffer_ptr[i] * max_brightness;
-            generic_args_ptr->display_window->framebuffer_ptr[i] = temp_for_scaling / 255;
+            generic_args_ptr->display_window->framebuffer_ptr[i] = 128;//temp_for_scaling / 255;
         }
     }
     generic_args_ptr->display_window->re_draw();
@@ -328,7 +328,7 @@ int main(int argc, char * argv[])
         return -1;
     }
 
-    preview_window.hide();
+    //preview_window.hide();
 
     class Framebuffer_window * window_class_ptr_array[] = {&display_window, &preview_window};
     struct window_data window_data = {2, window_class_ptr_array};
@@ -359,7 +359,7 @@ int main(int argc, char * argv[])
 
     unsigned int command_idx, buffer_idx, length;
     char * command_buffer;
-    while (!global_flags.close)
+    while (global_flags.close == false)
     {
         command_idx = 0;
         buffer_idx = 0;
