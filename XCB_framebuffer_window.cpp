@@ -17,8 +17,8 @@ xcb_screen_t * Framebuffer_window::screen;
 
 Framebuffer_window::Framebuffer_window(unsigned int width, unsigned int height, char * name, unsigned int name_len)
 {
-    width = width;
-    height = height;
+    this->width = width;
+    this->height = height;
 
     if (instances == 0)
     {
