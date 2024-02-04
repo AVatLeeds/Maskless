@@ -1,4 +1,4 @@
-// Compile with g++ -Wall main.cpp XCB_framebuffer_window.cpp -o main.exec -lxcb -lxcb-image -lxcb-shm -lxcb-icccm -lreadline
+// Compile with g++ -Wall main.cpp XCB_framebuffer_window.cpp PNG_reader.cpp -o main.exec -lxcb -lxcb-image -lxcb-shm -lxcb-icccm -lreadline -lpng
 #include <cstddef>
 #include <cstdlib>
 #include <cstring>
@@ -141,10 +141,10 @@ struct arg
     enum arg_types arg_type;
     union
     {
-        char * path;
         struct text_bool text_bool;
         unsigned int list_length;
         char ** enumeration_strings;
+        void * empty;
     };
 };
 
@@ -168,11 +168,11 @@ int png_load_func(struct generic_args * generic_args_ptr, void * args_list[])
 {
     uint8_t * temp_ptr;
     if (generic_args_ptr->image->open((char *)args_list[0]) < 0) return -1;
-    for (int j = 0; j < generic_args_ptr->image->height(); j ++)
+    for (unsigned int j = 0; j < generic_args_ptr->image->height(); j ++)
     {
         temp_ptr = generic_args_ptr->preview_window->framebuffer_ptr + (j * generic_args_ptr->preview_window->stride);
         // TODO get rid of magic number 3!
-        for (int i = 0; i < generic_args_ptr->image->row_bytes(); i += 3)
+        for (unsigned int i = 0; i < generic_args_ptr->image->row_bytes(); i += 3)
         {
             *(temp_ptr ++) = generic_args_ptr->image->data_ptr[j][i + 0];
             *(temp_ptr ++) = generic_args_ptr->image->data_ptr[j][i + 1];
@@ -180,6 +180,7 @@ int png_load_func(struct generic_args * generic_args_ptr, void * args_list[])
             *(temp_ptr ++) = 0;
         }
     }
+    return 0;
 }
 
 int png_preview_func(struct generic_args * generic_args_ptr, void * args_list[])
@@ -189,10 +190,11 @@ int png_preview_func(struct generic_args * generic_args_ptr, void * args_list[])
 
 int clear_func(struct generic_args * generic_args_ptr, void * args_list[])
 {
-    for (int i = 0; i < (generic_args_ptr->display_window->stride * generic_args_ptr->display_window->height); i ++)
+    for (unsigned int i = 0; i < (generic_args_ptr->display_window->stride * generic_args_ptr->display_window->height); i ++)
     {
         generic_args_ptr->display_window->framebuffer_ptr[i] = 0;
     }
+    return 0;
 }
 
 int align_func(struct generic_args * generic_args_ptr, void * args_list[])
@@ -200,12 +202,13 @@ int align_func(struct generic_args * generic_args_ptr, void * args_list[])
     clear_func(NULL, NULL);
     uint8_t max_brightness = 128;
     unsigned int temp_for_scaling = 0;
-    for (int i = 3; i < (generic_args_ptr->preview_window->stride * generic_args_ptr->preview_window->height); i += 4)
+    for (unsigned int i = 3; i < (generic_args_ptr->preview_window->stride * generic_args_ptr->preview_window->height); i += 4)
     {
         temp_for_scaling = generic_args_ptr->preview_window->framebuffer_ptr[i] * max_brightness;
         generic_args_ptr->display_window->framebuffer_ptr[i] = temp_for_scaling / 255;
     }
     generic_args_ptr->display_window->re_draw();
+    return 0;
 }
 
 int expose_func(struct generic_args * generic_args_ptr, void * args_list[])
@@ -213,7 +216,7 @@ int expose_func(struct generic_args * generic_args_ptr, void * args_list[])
     clear_func(NULL, NULL);
     uint8_t max_brightness = 128;
     unsigned int temp_for_scaling = 0;
-    for (int i = 0; i < (generic_args_ptr->preview_window->stride * generic_args_ptr->preview_window->height); i ++)
+    for (unsigned int i = 0; i < (generic_args_ptr->preview_window->stride * generic_args_ptr->preview_window->height); i ++)
     {
         if ((i % 4))
         {
@@ -222,6 +225,7 @@ int expose_func(struct generic_args * generic_args_ptr, void * args_list[])
         }
     }
     generic_args_ptr->display_window->re_draw();
+    return 0;
 }
 
 
@@ -337,14 +341,18 @@ int main(int argc, char * argv[])
 
     PNG png_image;
 
-    const unsigned int num_commands = 1;
+    const unsigned int num_commands = 5;
     //const struct command commands_array[num_commands] = {
     //    {QUIT, 4, "quit", 0, quit_command},
     //    {PREVIEW, 7, "preview", 1, preview_command}
     //};
     struct exposed_func commands_array[num_commands] = 
     {
-        {"quit", 4, 0, {&preview_window, &display_window, NULL}, {}, quit_func},
+        {"quit", 4, 0, {&preview_window, &display_window, NULL}, {{}}, quit_func},
+        {"load_png", 8, 1, {&preview_window, &display_window, &png_image}, {{PATH, NULL}}, png_load_func},
+        {"clear", 5, 0, {&preview_window, &display_window, NULL}, {{}}, clear_func},
+        {"align", 5, 0, {&preview_window, &display_window, NULL}, {{}}, align_func},
+        {"expose", 6, 0, {&preview_window, &display_window, NULL}, {{}}, expose_func}
         //{"preview", 7, 1, {&window_data, &png_image}, {{.arg_type = TEXT_BOOL, .text_bool = {"show", "hide"}}}, preview_func},
         //{"fill", 4, 2, {&preview_window}, {{.arg_type = CSV_UINT_LIST, .list_length = 3}, {.arg_type = ENUM, .enumeration_strings = blend_mode_strings}}, fill_func}
     };
