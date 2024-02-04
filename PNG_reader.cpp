@@ -8,6 +8,7 @@
 
 #include "PNG_reader.h"
 
+PNG::PNG(){}
 
 int PNG::open(char *path)
 {
