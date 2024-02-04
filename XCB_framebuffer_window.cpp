@@ -15,15 +15,18 @@ unsigned int Framebuffer_window::instances;
 xcb_connection_t * Framebuffer_window::connection;
 xcb_screen_t * Framebuffer_window::screen;
 
-Framebuffer_window::Framebuffer_window(unsigned int width, unsigned int height, char * name, unsigned int name_len, struct window_props * window_properties)
+Framebuffer_window::Framebuffer_window(unsigned int width, unsigned int height, char * name, unsigned int name_len)
 {
+    width = width;
+    height = height;
+
     if (instances == 0)
     {
         connection = xcb_connect(NULL, NULL);
         if (xcb_connection_has_error(connection))
         {
             std::cerr << "Error opening X connection.\n";
-            window_properties->error_status = -1;
+            error_status = -1;
             goto FAIL;
         }
 
@@ -39,7 +42,7 @@ Framebuffer_window::Framebuffer_window(unsigned int width, unsigned int height, 
         if ((shm_extension_data == NULL) || (shm_extension_data->present == 0))
         {
             std::cerr <<"Error: XCB SHM extension does not seem to be present.\n";
-            window_properties->error_status = -1;
+            error_status = -1;
             goto FAIL;
         }
     }
@@ -51,9 +54,9 @@ Framebuffer_window::Framebuffer_window(unsigned int width, unsigned int height, 
     // Data pointer and data size (bytes) cannot be provided yet as we don't know bits per pixel in advance in this case.
     framebuffer_image = xcb_image_create_native(connection, width, height, XCB_IMAGE_FORMAT_Z_PIXMAP, screen->root_depth, NULL, 0, NULL);
 
-    window_properties->bit_depth = framebuffer_image->depth;
-    window_properties->bits_per_pixel = framebuffer_image->bpp;
-    window_properties->stride = framebuffer_image->stride;
+    bit_depth = framebuffer_image->depth;
+    bits_per_pixel = framebuffer_image->bpp;
+    stride = framebuffer_image->stride;
 
     // IPC_CREAT ensures a new segment is created. IPC_EXCL ensures failure if the segment already exists.
     // last four digits specify user, group and global permissions.
@@ -61,7 +64,7 @@ Framebuffer_window::Framebuffer_window(unsigned int width, unsigned int height, 
     if (shm_id < 0)
     {
         std::cerr << "Error: Failed to acquire shared memory segment.\n";
-        window_properties->error_status = -1;
+        error_status = -1;
         goto FAIL;
     }
     // attach the shared memory to the process address space and assign image data to point at it.

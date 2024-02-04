@@ -8,24 +8,22 @@
 #include <xcb/xcb_icccm.h>
 #include <xcb/xproto.h>
 
-struct window_props
-{
-    int error_status;
-    unsigned int bit_depth;
-    unsigned int bits_per_pixel;
-    unsigned int stride;
-};
-
 class Framebuffer_window
 {
     public:
-    Framebuffer_window(unsigned int width, unsigned int height, char * name, unsigned int name_len, struct window_props * window_properties);
+    Framebuffer_window(unsigned int width, unsigned int height, char * name, unsigned int name_len);
     ~Framebuffer_window();
 
     void re_draw();
     int handle_events();
     void hide();
     void show();
+
+    int error_status;
+    unsigned int width, height;
+    unsigned int bit_depth;
+    unsigned int bits_per_pixel;
+    unsigned int stride;
 
     uint8_t * framebuffer_ptr;
 
