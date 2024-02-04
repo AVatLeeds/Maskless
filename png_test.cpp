@@ -1,4 +1,4 @@
-// Comile with g++ -Wall png_test.cpp -o png_test.exec -lpng
+// Comile with g++ -Wall XCB_framebuffer_window.cpp png_test.cpp -o png_test.exec -lxcb -lxcb-image -lxcb-shm -lxcb-icccm -lpng
 #include <cstddef>
 #include <cstdio>
 #include <iostream>
@@ -68,13 +68,12 @@ int main(int argc, char * argv[])
     png_byte ** row_pointers;
     row_pointers = png_get_rows(png_struct_ptr, png_info_ptr);
 
-    struct window_props win_props;
-    class Framebuffer_window test_window(image_width, image_height, "PNG preview", 11, &win_props);
+    class Framebuffer_window test_window(image_width, image_height, "PNG preview", 11);
 
     uint8_t * pix_component_ptr;
     for (int j = 0; j < image_height; j ++)
     {
-        pix_component_ptr = test_window.framebuffer_ptr + (j * win_props.stride);
+        pix_component_ptr = test_window.framebuffer_ptr + (j * test_window.stride);
         for (int i = 0; i < (image_width * 3); i += 3)
         {   
             *(pix_component_ptr ++) = row_pointers[j][i + 0];
@@ -83,6 +82,7 @@ int main(int argc, char * argv[])
             *(pix_component_ptr ++) = 0;
         }
     }
+    test_window.re_draw();
 
     while (true)
     {
