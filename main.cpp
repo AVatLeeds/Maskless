@@ -180,6 +180,7 @@ int png_load_func(struct generic_args * generic_args_ptr, void * args_list[])
             *(temp_ptr ++) = 0;
         }
     }
+    generic_args_ptr->preview_window->re_draw();
     return 0;
 }
 
@@ -243,11 +244,12 @@ int expose_func(struct generic_args * generic_args_ptr, void * args_list[])
     return 0;
 }*/
 
-/*int handle_args(char * command_buffer, struct exposed_func * func)
+int handle_args(char * command_buffer, struct exposed_func * func)
 {
     void * args_list[func->num_args];
     char * temp_string_ptr;
     void * temp_data_ptr;
+    int return_val;
     unsigned int arg_idx, i = 0;
     for (arg_idx = 0; arg_idx < func->num_args; arg_idx ++)
     {
@@ -255,7 +257,37 @@ int expose_func(struct generic_args * generic_args_ptr, void * args_list[])
         while ((*command_buffer == ' ') || (*command_buffer == '\t')) command_buffer ++;
         switch (func->args_list[arg_idx].arg_type)
         {
+            case PATH:
+            if (*command_buffer == '"')
+            {
+                temp_string_ptr = ++ command_buffer;
+                while ((*command_buffer != '"') && (*command_buffer != '\0')) command_buffer ++;
+                i = (command_buffer - temp_string_ptr);
+                temp_string_ptr = (char *)malloc(sizeof(char) * i);
+                if (*command_buffer == '"')
+                {
+                    temp_string_ptr[i --] = '\0';
+                    for (; i; i --) temp_string_ptr[i] = *(-- command_buffer);
+                    temp_string_ptr[0] = *(-- command_buffer);
+                    std::cout << temp_string_ptr << std::endl;
+                    args_list[arg_idx] = temp_string_ptr;
+                }
+                else
+                {
+                    std::cerr << "Error: No closing quote on path name.\n";
+                    goto FAIL;
+                }
+            }
+            else
+            {
+                std::cerr << "Error: No file path found.\n";
+                std::cerr << "\tExpected \"path name\" as argument to " << func->name_string << std::endl;
+                goto FAIL;
+            }
+            break;
+
             case TEXT_BOOL:
+            /*
             temp_data_ptr = malloc(sizeof(bool));
             temp_string_ptr = func->args_list[arg_idx].text_bool.option_true;
             while ((temp_string_ptr[i] != '\0') && (temp_string_ptr[i] == command_buffer[i])) i ++;
@@ -281,10 +313,10 @@ int expose_func(struct generic_args * generic_args_ptr, void * args_list[])
                     goto FAIL;
                 }
             }
-
+            */
             break;
-            case UINT:
 
+            case UINT:
             break;
 
             case INT:
@@ -301,14 +333,20 @@ int expose_func(struct generic_args * generic_args_ptr, void * args_list[])
         }
     }
 
-    func->func(&(func->generic_args), args_list);
-    for (arg_idx = 0; arg_idx < func->num_args; arg_idx ++) free(args_list[arg_idx]);
-    return 0;
+    return_val = func->func(&(func->generic_args), args_list);
+    for (arg_idx = 0; arg_idx < func->num_args; arg_idx ++) 
+    {
+        if (args_list[arg_idx] != NULL) free(args_list[arg_idx]);
+    }
+    return return_val;
 
     FAIL:
-    for (arg_idx = 0; arg_idx < func->num_args; arg_idx ++) free(args_list[arg_idx]);
+    for (arg_idx = 0; arg_idx < func->num_args; arg_idx ++)
+    {
+        if (args_list[arg_idx] != NULL) free(args_list[arg_idx]);
+    }
     return -1;
-}*/
+}
 
 int main(int argc, char * argv[])
 {
@@ -327,24 +365,6 @@ int main(int argc, char * argv[])
         std::cerr << "Failed to create preview window.\n";
         return -1;
     }
-
-    //preview_window.hide();
-    std::cout << preview_window.width << std::endl;
-    std::cout << preview_window.height << std::endl;
-    std::cout << preview_window.stride << std::endl;
-    uint8_t * pix_component_ptr;
-    for (int j = 0; j < preview_window.height; j ++)
-    {
-        pix_component_ptr = preview_window.framebuffer_ptr + (j * preview_window.stride);
-        for (int i = 0; i < (100 * 3); i += 3)
-        {   
-            *(pix_component_ptr ++) = 128;
-            *(pix_component_ptr ++) = 0;
-            *(pix_component_ptr ++) = 0;
-            *(pix_component_ptr ++) = 0;
-        }
-    }
-    preview_window.re_draw();
 
     class Framebuffer_window * window_class_ptr_array[] = {&display_window, &preview_window};
     struct window_data window_data = {2, window_class_ptr_array};
@@ -415,11 +435,11 @@ int main(int argc, char * argv[])
                 {
                     if (commands_array[command_idx].name_string[0] == command_buffer[0])
                     {
-                        while (-- length)
+                        while (-- buffer_idx)
                         {
-                            if (commands_array[command_idx].name_string[length] != command_buffer[length]) break;
+                            if (commands_array[command_idx].name_string[buffer_idx] != command_buffer[buffer_idx]) break;
                         }
-                        if (length == 0)
+                        if (buffer_idx == 0)
                         {
                             if (commands_array[command_idx].num_args == 0)
                             {
@@ -428,10 +448,10 @@ int main(int argc, char * argv[])
                             }
                             else
                             {
-                                //if (handle_args((command_buffer + length), &(commands_array[command_idx])) < 0)
-                                //{
-                                //    std::cerr << "Error: Failed to interpret arguments to " << commands_array[command_idx].name_string << std::endl;
-                                //}
+                                if (handle_args((command_buffer + length), &(commands_array[command_idx])) < 0)
+                                {
+                                    std::cerr << "Error: Command failed with arguments provided.\n";
+                                }
                                 break;
                             }
                         }
@@ -440,7 +460,7 @@ int main(int argc, char * argv[])
             }
             if (command_idx == num_commands)
             {
-                command_buffer[buffer_idx] = '\0';
+                command_buffer[length] = '\0';
                 std::cerr << "Error: Unrecognised command " << command_buffer << std::endl;
             }
         }
