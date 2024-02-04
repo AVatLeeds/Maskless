@@ -194,6 +194,7 @@ int clear_func(struct generic_args * generic_args_ptr, void * args_list[])
     {
         generic_args_ptr->display_window->framebuffer_ptr[i] = 0;
     }
+    generic_args_ptr->display_window->re_draw();
     return 0;
 }
 
@@ -202,10 +203,10 @@ int align_func(struct generic_args * generic_args_ptr, void * args_list[])
     clear_func(generic_args_ptr, NULL);
     uint8_t max_brightness = 128;
     unsigned int temp_for_scaling = 0;
-    for (unsigned int i = 3; i < (generic_args_ptr->preview_window->stride * generic_args_ptr->preview_window->height); i += 4)
+    for (unsigned int i = 2; i < (generic_args_ptr->preview_window->stride * generic_args_ptr->preview_window->height); i += 4)
     {
         temp_for_scaling = generic_args_ptr->preview_window->framebuffer_ptr[i] * max_brightness;
-        generic_args_ptr->display_window->framebuffer_ptr[i] = 128;//temp_for_scaling / 255;
+        generic_args_ptr->display_window->framebuffer_ptr[i] = temp_for_scaling / 255;
     }
     generic_args_ptr->display_window->re_draw();
     return 0;
@@ -216,13 +217,12 @@ int expose_func(struct generic_args * generic_args_ptr, void * args_list[])
     clear_func(generic_args_ptr, NULL);
     uint8_t max_brightness = 128;
     unsigned int temp_for_scaling = 0;
-    for (unsigned int i = 0; i < (generic_args_ptr->preview_window->stride * generic_args_ptr->preview_window->height); i ++)
+    for (unsigned int i = 0; i < (generic_args_ptr->preview_window->stride * generic_args_ptr->preview_window->height); i += 4)
     {
-        if ((i % 4))
-        {
-            temp_for_scaling = generic_args_ptr->preview_window->framebuffer_ptr[i] * max_brightness;
-            generic_args_ptr->display_window->framebuffer_ptr[i] = 128;//temp_for_scaling / 255;
-        }
+        temp_for_scaling = generic_args_ptr->preview_window->framebuffer_ptr[i] * max_brightness;
+        generic_args_ptr->display_window->framebuffer_ptr[i + 0] = temp_for_scaling / 255;
+        generic_args_ptr->display_window->framebuffer_ptr[i + 1] = temp_for_scaling / 255;
+        generic_args_ptr->display_window->framebuffer_ptr[i + 2] = temp_for_scaling / 255;
     }
     generic_args_ptr->display_window->re_draw();
     return 0;
@@ -329,6 +329,22 @@ int main(int argc, char * argv[])
     }
 
     //preview_window.hide();
+    std::cout << preview_window.width << std::endl;
+    std::cout << preview_window.height << std::endl;
+    std::cout << preview_window.stride << std::endl;
+    uint8_t * pix_component_ptr;
+    for (int j = 0; j < preview_window.height; j ++)
+    {
+        pix_component_ptr = preview_window.framebuffer_ptr + (j * preview_window.stride);
+        for (int i = 0; i < (100 * 3); i += 3)
+        {   
+            *(pix_component_ptr ++) = 128;
+            *(pix_component_ptr ++) = 0;
+            *(pix_component_ptr ++) = 0;
+            *(pix_component_ptr ++) = 0;
+        }
+    }
+    preview_window.re_draw();
 
     class Framebuffer_window * window_class_ptr_array[] = {&display_window, &preview_window};
     struct window_data window_data = {2, window_class_ptr_array};
