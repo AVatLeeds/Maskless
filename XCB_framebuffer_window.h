@@ -18,6 +18,8 @@ class Framebuffer_window
     int handle_events();
     void hide();
     void show();
+    void fullscreen();
+    void restore();
 
     int error_status;
     unsigned int width, height;

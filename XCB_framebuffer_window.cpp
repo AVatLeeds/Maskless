@@ -8,6 +8,7 @@
 #include <xcb/xcb_image.h>
 #include <xcb/shm.h>
 #include <xcb/xcb_icccm.h>
+#include <xcb/xcb_ewmh.h>
 
 #include "XCB_framebuffer_window.h"
 
@@ -203,6 +204,58 @@ void Framebuffer_window::hide()
 void Framebuffer_window::show()
 {
     xcb_map_window(connection, window);
+}
+
+void Framebuffer_window::fullscreen()
+{
+    // https://stackoverflow.com/questions/13302982/how-do-i-provide-the-net-wm-state-fullscreen-hint-with-xcb
+    //xcb_ewmh_connection_t extended_window_manager_hints;
+    //xcb_intern_atom_cookie_t * ewmh_cookie_ptr = xcb_ewmh_init_atoms(connection , &extended_window_manager_hints);
+    //xcb_ewmh_init_atoms_replies(&extended_window_manager_hints, ewmh_cookie_ptr, &shared_error_ptr);
+    //xcb_change_property(connection, XCB_PROP_MODE_REPLACE, window, extended_window_manager_hints._NET_WM_STATE, XCB_ATOM_ATOM, 32, 1, &(extended_window_manager_hints._NET_WM_STATE_FULLSCREEN));
+    //xcb_flush(connection);
+
+    // https://gist.github.com/0xd61/43d2fa8b93c9656cca92956b70a5216f
+    xcb_intern_atom_cookie_t atom_cookie;
+
+    atom_cookie = xcb_intern_atom(connection, 0, 13, "_NET_WM_STATE");
+    xcb_flush(connection);
+    xcb_intern_atom_reply_t * wm_state_atom_ptr = xcb_intern_atom_reply(connection, atom_cookie, NULL);
+
+    atom_cookie = xcb_intern_atom(connection, 0, 24, "_NET_WM_STATE_FULLSCREEN");
+    xcb_flush(connection);
+    xcb_intern_atom_reply_t * wm_state_fullscreen_atom_ptr = xcb_intern_atom_reply(connection, atom_cookie, NULL);
+
+    xcb_get_property_cookie_t current_fullscreen_cookie = xcb_get_property(connection, 0, window, wm_state_atom_ptr->atom, XCB_ATOM_ATOM, 0, sizeof(xcb_atom_t *));
+
+    xcb_get_property_reply_t * current_fulscreen_property = xcb_get_property_reply(connection, current_fullscreen_cookie, NULL);
+    
+    xcb_atom_t * current_fullscreen_atom_ptr = (xcb_atom_t *)xcb_get_property_value(current_fulscreen_property);
+
+    if (*current_fullscreen_atom_ptr == wm_state_fullscreen_atom_ptr->atom) // if currently fullscreen
+    {
+        xcb_delete_property(connection, window, wm_state_atom_ptr->atom);
+    }
+    else
+    {
+        xcb_change_property(connection, XCB_PROP_MODE_REPLACE, window, wm_state_atom_ptr->atom, XCB_ATOM_ATOM, sizeof(xcb_atom_t *), 1, &(wm_state_fullscreen_atom_ptr->atom));
+    }
+
+    free(wm_state_atom_ptr);
+    free(wm_state_fullscreen_atom_ptr);
+    free(current_fulscreen_property);
+
+    xcb_unmap_window(connection , window);
+    xcb_map_window(connection, window);
+}
+
+void Framebuffer_window::restore()
+{
+    //xcb_ewmh_connection_t extended_window_manager_hints;
+    //xcb_intern_atom_cookie_t * ewmh_cookie_ptr = xcb_ewmh_init_atoms(connection , &extended_window_manager_hints);
+    //xcb_ewmh_init_atoms_replies(&extended_window_manager_hints, ewmh_cookie_ptr, &shared_error_ptr);
+    //xcb_change_property(connection, XCB_PROP_MODE_REPLACE, window, extended_window_manager_hints._NET_WM_STATE, XCB_ATOM_ATOM, 32, 1, &(extended_window_manager_hints._NET_WM_STATE_MODAL));
+    //xcb_flush(connection);
 }
 
 Framebuffer_window::~Framebuffer_window()
