@@ -184,11 +184,6 @@ int png_load_func(struct generic_args * generic_args_ptr, void * args_list[])
     return 0;
 }
 
-int png_preview_func(struct generic_args * generic_args_ptr, void * args_list[])
-{
-
-}
-
 int clear_func(struct generic_args * generic_args_ptr, void * args_list[])
 {
     for (unsigned int i = 0; i < (generic_args_ptr->display_window->stride * generic_args_ptr->display_window->height); i ++)
@@ -226,6 +221,18 @@ int expose_func(struct generic_args * generic_args_ptr, void * args_list[])
         generic_args_ptr->display_window->framebuffer_ptr[i + 2] = temp_for_scaling / 255;
     }
     generic_args_ptr->display_window->re_draw();
+    return 0;
+}
+
+int display_fullscreen_func(struct generic_args * generic_args_ptr, void * args_list[])
+{
+    generic_args_ptr->display_window->fullscreen();
+    return 0;
+}
+
+int display_restore_func(struct generic_args * generic_args_ptr, void * args_list[])
+{
+    generic_args_ptr->display_window->restore();
     return 0;
 }
 
@@ -377,7 +384,7 @@ int main(int argc, char * argv[])
 
     PNG png_image;
 
-    const unsigned int num_commands = 5;
+    const unsigned int num_commands = 7;
     //const struct command commands_array[num_commands] = {
     //    {QUIT, 4, "quit", 0, quit_command},
     //    {PREVIEW, 7, "preview", 1, preview_command}
@@ -388,7 +395,9 @@ int main(int argc, char * argv[])
         {"load_png", 8, 1, {&preview_window, &display_window, &png_image}, {{PATH, NULL}}, png_load_func},
         {"clear", 5, 0, {&preview_window, &display_window, NULL}, {{}}, clear_func},
         {"align", 5, 0, {&preview_window, &display_window, NULL}, {{}}, align_func},
-        {"expose", 6, 0, {&preview_window, &display_window, NULL}, {{}}, expose_func}
+        {"expose", 6, 0, {&preview_window, &display_window, NULL}, {{}}, expose_func},
+        {"display_fullscreen", 18, 0, {&preview_window, &display_window, NULL}, {{}}, display_fullscreen_func},
+        {"display_restore", 15, 0, {&preview_window, &display_window, NULL}, {{}}, display_restore_func}
         //{"preview", 7, 1, {&window_data, &png_image}, {{.arg_type = TEXT_BOOL, .text_bool = {"show", "hide"}}}, preview_func},
         //{"fill", 4, 2, {&preview_window}, {{.arg_type = CSV_UINT_LIST, .list_length = 3}, {.arg_type = ENUM, .enumeration_strings = blend_mode_strings}}, fill_func}
     };
