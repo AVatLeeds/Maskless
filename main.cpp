@@ -373,10 +373,10 @@ int main(int argc, char * argv[])
         return -1;
     }
 
-    class Framebuffer_window * window_class_ptr_array[] = {&display_window, &preview_window};
-    struct window_data window_data = {2, window_class_ptr_array};
+    const class Framebuffer_window * window_class_ptr_array[] = {&display_window, &preview_window};
+    const struct window_data window_data = {2, (class Framebuffer_window **)window_class_ptr_array};
     pthread_t window_thread_id;
-    if (pthread_create(&window_thread_id, NULL, window_thread, &window_data) != 0)
+    if (pthread_create(&window_thread_id, NULL, window_thread, (void *)(&window_data)) != 0)
     {
         std::cerr << "Error: Failed to create window handling thread.";
         return -1;
@@ -477,6 +477,8 @@ int main(int argc, char * argv[])
     }
 
     pthread_join(window_thread_id, NULL);
+
+    std::cout << "Goodbye.\n";
 
     return 0;
 }
