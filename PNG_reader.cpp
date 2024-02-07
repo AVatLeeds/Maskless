@@ -57,6 +57,8 @@ int PNG::open(char *path)
     png_read_png(png_read_struct_ptr, png_info_ptr, PNG_TRANSFORM_SCALE_16 | PNG_TRANSFORM_STRIP_ALPHA | PNG_TRANSFORM_BGR, NULL);
 
     data_ptr = png_get_rows(png_read_struct_ptr, png_info_ptr);
+    
+    return 0;
 }
 
 unsigned int PNG::width()
@@ -76,7 +78,8 @@ unsigned int PNG::row_bytes()
 
 PNG::~PNG()
 {
-    free(data_ptr);
+    //free(data_ptr);
+    //if ((png_read_struct_ptr != NULL) && (png_info_ptr != NULL)) png_destroy_read_struct(&png_read_struct_ptr, &png_info_ptr, NULL);
     png_destroy_read_struct(&png_read_struct_ptr, &png_info_ptr, NULL);
-    fclose(file_ptr);
+    if (file_ptr != NULL) fclose(file_ptr);
 }

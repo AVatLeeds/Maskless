@@ -52,7 +52,7 @@ class Framebuffer_window
 
     xcb_gcontext_t graphics_context;
 
-    xcb_generic_event_t * event_ptr;
+    xcb_generic_event_t * event_ptr = NULL;
 
 };
 

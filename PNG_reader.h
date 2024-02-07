@@ -17,12 +17,12 @@ class PNG
     unsigned int height();
     unsigned int row_bytes();
 
-    uint8_t **  data_ptr;
+    uint8_t **  data_ptr = NULL;
 
     private:
-    FILE * file_ptr;
-    png_struct * png_read_struct_ptr;
-    png_info * png_info_ptr;
+    FILE * file_ptr = NULL;
+    png_struct * png_read_struct_ptr = NULL;
+    png_info * png_info_ptr = NULL;
 };
 
 #endif

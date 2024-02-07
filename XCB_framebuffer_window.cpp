@@ -78,6 +78,7 @@ Framebuffer_window::Framebuffer_window(unsigned int width, unsigned int height, 
     shared_cookie = xcb_shm_attach_checked(connection, xcb_shm_segment, shm_id, 0);
     shared_error_ptr = xcb_request_check(connection , shared_cookie);
     // TODO implement error handling here.
+    free(shared_error_ptr);
 
     // Creating and showing a window.
     window = xcb_generate_id(connection);
@@ -267,20 +268,17 @@ Framebuffer_window::~Framebuffer_window()
     shmdt(framebuffer_image->data);
     shmctl(shm_id, IPC_RMID, 0);
     xcb_image_destroy(framebuffer_image);
-    free(framebuffer_image);
 
     free(protocol_reply_ptr);
     free(close_reply_ptr);
 
     xcb_free_gc(connection, graphics_context);
     xcb_destroy_window(connection, window);
-    free(event_ptr);
+    if (event_ptr != NULL) free(event_ptr);
 
     if (instances == 0)
     {
         xcb_disconnect(connection);
-        free(connection);
-        free(screen);
     }
 }
 
